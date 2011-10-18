@@ -467,6 +467,7 @@ auth_session_get_object_path_reply (DBusGProxy *proxy, char *object_path,
 
     DEBUG ("Object path received: %s", object_path);
     _signon_object_ready (self, auth_session_object_quark (), error);
+    g_free (object_path);
     g_clear_error (&error);
 }
 
