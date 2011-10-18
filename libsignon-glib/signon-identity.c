@@ -460,6 +460,7 @@ identity_registered (SignonIdentity *identity, DBusGProxy *proxy,
         {
             DEBUG("%s: ", G_STRFUNC);
             priv->identity_info = identity_ptrarray_to_identity_info (identity_array);
+            g_ptr_array_set_free_func (identity_array, g_free);
             g_ptr_array_free (identity_array, TRUE);
         }
 
@@ -1260,6 +1261,7 @@ identity_info_reply(DBusGProxy *proxy, GPtrArray *identity_array,
 
     new_error = _signon_errors_get_error_from_dbus (error);
     priv->identity_info = identity_ptrarray_to_identity_info (identity_array);
+    g_ptr_array_set_free_func (identity_array, g_free);
     g_ptr_array_free (identity_array, TRUE);
 
     if (cb_data->cb)
