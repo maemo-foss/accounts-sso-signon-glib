@@ -414,8 +414,10 @@ auth_session_get_object_path_reply (DBusGProxy *proxy, char *object_path,
     {
         if (error)
             DEBUG ("Error message is %s", error->message);
-        else
+        else {
             error = g_error_new (auth_session_errors_quark(), 1, SSO_AUTH_SESSION_CONNECTION_PROBLEM_G);
+            g_free (object_path);
+        }
     }
     else
     {
@@ -454,11 +456,12 @@ auth_session_get_object_path_reply (DBusGProxy *proxy, char *object_path,
                                      G_CALLBACK (auth_session_remote_object_destroyed_cb),
                                      self,
                                      NULL);
+        g_free (object_path);
     }
 
     DEBUG ("Object path received: %s", object_path);
     _signon_object_ready (self, auth_session_object_quark (), error);
-    g_free (object_path);
+
     g_clear_error (&error);
 }
 
