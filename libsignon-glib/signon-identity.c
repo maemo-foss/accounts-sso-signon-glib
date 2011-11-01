@@ -505,6 +505,9 @@ identity_new_cb (DBusGProxy *proxy,
     DEBUG ("%s %d", G_STRFUNC, __LINE__);
     GError *new_error = _signon_errors_get_error_from_dbus (error);
     identity_registered (identity, proxy, object_path, NULL, new_error);
+
+    if (!error)
+        g_free (object_path);
 }
 
 static void
@@ -519,6 +522,9 @@ identity_new_from_db_cb (DBusGProxy *proxy,
     DEBUG ("%s %d", G_STRFUNC, __LINE__);
     GError *new_error = _signon_errors_get_error_from_dbus (error);
     identity_registered (identity, proxy, objectPath, identityData, new_error);
+
+    if (!error)
+        g_free (objectPath);
 }
 
 static void
@@ -1104,11 +1110,9 @@ identity_ptrarray_to_identity_info (const GPtrArray *identity_array)
     value = g_ptr_array_index (identity_array, 5);
     g_assert (G_VALUE_HOLDS_BOXED (value));
 
-    info->methods = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                            g_free, (GDestroyNotify)g_strfreev);
     g_hash_table_foreach ((GHashTable *)g_value_get_boxed(value),
                                             identity_value_to_stringarray,
-                                                info->methods);
+                                            info->methods);
     g_value_unset (value);
     /* get the accessControlList (gchar**) */
     value = g_ptr_array_index (identity_array, 6);
