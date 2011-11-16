@@ -847,8 +847,11 @@ identity_store_credentials_reply (DBusGProxy *proxy,
     IdentityStoreCredentialsCbData *cb_data = (IdentityStoreCredentialsCbData *)userdata;
 
     g_return_if_fail (cb_data != NULL);
-    g_return_if_fail (cb_data->self != NULL);
-    g_return_if_fail (cb_data->self->priv != NULL);
+
+    if (!cb_data->self || !cb_data->self->priv) {
+        g_slice_free (IdentityStoreCredentialsCbData, cb_data);
+        return;
+    }
 
     SignonIdentityPrivate *priv = cb_data->self->priv;
 
@@ -896,7 +899,11 @@ identity_verify_reply (DBusGProxy *proxy,
     IdentityVerifyCbData *cb_data = (IdentityVerifyCbData *)userdata;
 
     g_return_if_fail (cb_data != NULL);
-    g_return_if_fail (cb_data->self != NULL);
+
+    if (!cb_data->self) {
+        g_slice_free (IdentityVerifyCbData, cb_data);
+        return;
+    }
 
     new_error = _signon_errors_get_error_from_dbus (error);
 
@@ -1217,8 +1224,11 @@ identity_signout_reply (DBusGProxy *proxy,
     IdentityVoidCbData *cb_data = (IdentityVoidCbData *)userdata;
 
     g_return_if_fail (cb_data != NULL);
-    g_return_if_fail (cb_data->self != NULL);
-    g_return_if_fail (cb_data->self->priv != NULL);
+
+    if (!cb_data->self || !cb_data->self->priv) {
+        g_slice_free (IdentityVoidCbData, cb_data);
+        return;
+    }
 
     new_error = _signon_errors_get_error_from_dbus (error);
 
@@ -1240,8 +1250,11 @@ identity_removed_reply (DBusGProxy *proxy,
     IdentityVoidCbData *cb_data = (IdentityVoidCbData *)userdata;
 
     g_return_if_fail (cb_data != NULL);
-    g_return_if_fail (cb_data->self != NULL);
-    g_return_if_fail (cb_data->self->priv != NULL);
+
+    if (!cb_data->self || !cb_data->self->priv) {
+        g_slice_free (IdentityVoidCbData, cb_data);
+        return;
+    }
 
     new_error = _signon_errors_get_error_from_dbus (error);
 
@@ -1264,8 +1277,11 @@ identity_info_reply(DBusGProxy *proxy, GPtrArray *identity_array,
     IdentityInfoCbData *cb_data = (IdentityInfoCbData *)userdata;
 
     g_return_if_fail (cb_data != NULL);
-    g_return_if_fail (cb_data->self != NULL);
-    g_return_if_fail (cb_data->self->priv != NULL);
+
+    if (!cb_data->self || !cb_data->self->priv) {
+        g_slice_free (IdentityInfoCbData, cb_data);
+        return;
+    }
 
     SignonIdentityPrivate *priv = cb_data->self->priv;
 
