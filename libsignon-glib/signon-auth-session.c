@@ -558,8 +558,11 @@ auth_session_process_reply (DBusGProxy *proxy, GHashTable *session_data,
     GError *new_error = NULL;
     AuthSessionProcessCbData *cb_data = (AuthSessionProcessCbData *)userdata;
     g_return_if_fail (cb_data != NULL);
-    g_return_if_fail (cb_data->self != NULL);
-    g_return_if_fail (cb_data->self->priv != NULL);
+
+    if (!cb_data->self || !cb_data->self->priv) {
+        g_slice_free (AuthSessionProcessCbData, cb_data);
+        return;
+    }
 
     if (error)
         new_error = _signon_errors_get_error_from_dbus (error);
