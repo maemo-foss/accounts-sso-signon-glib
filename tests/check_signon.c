@@ -282,7 +282,9 @@ test_auth_session_query_mechanisms_nonexisting_cb (SignonAuthSession *self,
         return;
     }
 
+    fail_unless (error->code != SIGNON_ERROR_MECHANISM_NOT_AVAILABLE, "Wrong error code received");
     g_warning ("%s: %s", G_STRFUNC, error->message);
+
     g_main_loop_quit (main_loop);
 }
 
