@@ -22,6 +22,7 @@
  * 02110-1301 USA
  */
 #include "signon-utils.h"
+#include <dbus/dbus-glib.h>
 
 static void signon_copy_gvalue (gchar *key,
                                 GValue *value,
@@ -36,7 +37,16 @@ static void signon_copy_gvalue (gchar *key,
 
 void signon_free_gvalue (gpointer val)
 {
-    g_return_if_fail (G_IS_VALUE(val));
+    g_return_if_fail(G_IS_VALUE(val));
+
+    if (G_VALUE_TYPE(val) ==
+            DBUS_TYPE_G_UCHAR_ARRAY) {
+        GArray *array = (GArray *)g_value_get_boxed(val);
+        g_array_unref (array);
+    } else if (dbus_g_type_is_map(G_VALUE_TYPE(val))) {
+        GHashTable *gMap = (GHashTable *)g_value_get_boxed(val);
+        g_hash_table_unref (gMap);
+    }
 
     GValue *value = (GValue*)val;
     g_value_unset (value);
