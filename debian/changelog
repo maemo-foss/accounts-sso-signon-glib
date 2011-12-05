@@ -1,4 +1,4 @@
-libsignon-glib (1.6-1) unstable; urgency=low
+libsignon-glib (1.6.2) unstable; urgency=low
 
   * Addresses: NB#288895 - Incorrect error notes when tapped on Cancel/close buttons in Youtube authentication view.
 
