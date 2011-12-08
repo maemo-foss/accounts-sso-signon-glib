@@ -69,6 +69,7 @@ typedef enum {
     SIGNON_ERROR_FORGOT_PASSWORD,             /*< nick=ForgotPassword >*/
     SIGNON_ERROR_METHOD_OR_MECHANISM_NOT_ALLOWED, /*< nick=MethodOrMechanismNotAllowed >*/
     SIGNON_ERROR_INCORRECT_DATE,             /*< nick=IncorrectDate >*/
+    SIGNON_ERROR_SESSION_CLOSED,             /*< nick=SessionClosed >*/
     SIGNON_ERROR_USER_ERROR = 400            /*< nick=User >*/
 } SignonError;
 
