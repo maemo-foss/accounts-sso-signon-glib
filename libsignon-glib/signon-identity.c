@@ -407,7 +407,16 @@ identity_registered (SignonIdentity *identity, DBusGProxy *proxy,
                      char *object_path, GPtrArray *identity_array,
                      GError *error)
 {
-    g_return_if_fail (SIGNON_IS_IDENTITY (identity));
+    if (!identity || !SIGNON_IS_IDENTITY (identity))
+    {
+        DEBUG ("%s: Identity %p invalidated before callback invoked", G_STRFUNC, identity);
+        if (identity_array)
+        {
+            g_ptr_array_set_free_func (identity_array, g_free);
+            g_ptr_array_free (identity_array, TRUE);
+        }
+        return;
+    }
 
     SignonIdentityPrivate *priv;
     priv = identity->priv;
