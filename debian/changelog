@@ -1,6 +1,12 @@
+libsignon-glib (1.6-4) unstable; urgency=low
+
+  * Bumping-up the version 
+
+ -- Alexander Akimov <ext-alexander.akimov@nokia.com>  Thu, 08 Dec 2011 14:30:16 +0300
+ 
 libsignon-glib (1.6-3) unstable; urgency=low
 
-  * Addresses: NB#294011 - telepathy-sasl-signon shows heap leak when continously switching chat account availability between online and offline mode.
+  * Fixes: NB#294011 - telepathy-sasl-signon shows heap leak when continously switching chat account availability between online and offline mode.
 
  -- Alexander Akimov <ext-alexander.akimov@nokia.com>  Thu, 08 Dec 2011 14:30:16 +0300
 

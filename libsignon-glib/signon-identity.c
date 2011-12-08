@@ -410,7 +410,7 @@ identity_registered (SignonIdentity *identity, DBusGProxy *proxy,
     if (!identity || !SIGNON_IS_IDENTITY (identity))
     {
         DEBUG ("%s: Identity %p invalidated before callback invoked", G_STRFUNC, identity);
-        if (identity_array)
+        if (!error && identity_array)
         {
             g_ptr_array_set_free_func (identity_array, g_free);
             g_ptr_array_free (identity_array, TRUE);
