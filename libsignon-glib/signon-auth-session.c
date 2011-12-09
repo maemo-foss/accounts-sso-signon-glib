@@ -352,9 +352,6 @@ signon_auth_session_query_available_mechanisms (SignonAuthSession *self,
     g_return_if_fail (priv != NULL);
 
     AuthSessionQueryAvailableMechanismsCbData *cb_data = g_slice_new0 (AuthSessionQueryAvailableMechanismsCbData);
-    g_hash_table_insert (self->priv->cb_data_in_processing,
-                         (gpointer)cb_data,
-                         GINT_TO_POINTER(sizeof(AuthSessionQueryAvailableMechanismsCbData)));
 
     cb_data->self = self;
     cb_data->cb = cb;
@@ -385,9 +382,6 @@ signon_auth_session_process (SignonAuthSession *self,
     g_return_if_fail (session_data != NULL);
 
     AuthSessionProcessCbData *cb_data = g_slice_new0 (AuthSessionProcessCbData);
-    g_hash_table_insert (self->priv->cb_data_in_processing,
-                         (gpointer)cb_data,
-                         GINT_TO_POINTER(sizeof(AuthSessionProcessCbData)));
 
     cb_data->self = self;
     cb_data->cb = cb;
@@ -628,6 +622,7 @@ auth_session_process_reply (DBusGProxy *proxy, GHashTable *session_data,
         g_hash_table_unref (session_data);
 
     cb_data->self->priv->busy = FALSE;
+
     if (new_error)
         g_error_free (new_error);
 
@@ -659,12 +654,15 @@ auth_session_query_available_mechanisms_ready_cb (gpointer object, const GError 
     {
         (cb_data->cb)
             (self, NULL, error, cb_data->user_data);
-
         g_slice_free (AuthSessionQueryAvailableMechanismsCbData, cb_data);
     }
     else
     {
         g_return_if_fail (priv->proxy != NULL);
+        g_hash_table_insert (priv->cb_data_in_processing,
+                             (gpointer)cb_data,
+                             GINT_TO_POINTER(sizeof(AuthSessionQueryAvailableMechanismsCbData)));
+
         SSO_AuthSession_query_available_mechanisms_async (
             priv->proxy,
             (const char **)operation_data->wanted_mechanisms,
@@ -720,12 +718,16 @@ auth_session_process_ready_cb (gpointer object, const GError *error, gpointer us
     {
         g_return_if_fail (priv->proxy != NULL);
 
+        g_hash_table_insert (priv->cb_data_in_processing,
+                             (gpointer)cb_data,
+                             GINT_TO_POINTER(sizeof(AuthSessionProcessCbData)));
+
         _SSO_AuthSession_process_async_timeout (priv->proxy,
                                        operation_data->session_data,
                                        operation_data->mechanism,
                                        auth_session_process_reply,
-				       cb_data,
-				       0x7FFFFFFF);
+                                       cb_data,
+                                       0x7FFFFFFF);
 
        g_hash_table_destroy (operation_data->session_data);
 
