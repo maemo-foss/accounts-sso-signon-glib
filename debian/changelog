@@ -1,3 +1,9 @@
+libsignon-glib (1.6-5) unstable; urgency=low
+
+  * Bumping-up the version 
+
+ -- Alexander Akimov <ext-alexander.akimov@nokia.com>  Fri, 09 Dec 2011 14:30:16 +0300
+
 libsignon-glib (1.6-4) unstable; urgency=low
 
   * Bumping-up the version 
