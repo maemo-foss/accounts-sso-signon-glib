@@ -57,7 +57,6 @@ struct _SignonAuthSessionPrivate
     gchar *method_name;
 
     DBusGProxyCall *pending_call_get_path;
-    GHashTable *cb_data_in_processing;
 
     gboolean busy;
     gboolean canceled;
@@ -118,6 +117,16 @@ static void auth_session_query_mechanisms_reply (DBusGProxy *proxy, char **objec
 static void auth_session_process_reply (DBusGProxy *proxy, GHashTable *session_data, GError *error, gpointer userdata);
 
 static void auth_session_check_remote_object(SignonAuthSession *self);
+static void auth_session_process_async_free_data (gpointer data);
+
+static void auth_session_process_async_free_data (gpointer data)
+{
+    DBusGAsyncData *async_data = data;
+
+    g_slice_free (AuthSessionProcessCbData, async_data->userdata);
+    async_data->userdata = NULL;
+    _dbus_glib_async_data_free (async_data);
+}
 
 DBusGProxyCall*
 _SSO_AuthSession_process_async_timeout (DBusGProxy *proxy, 
@@ -134,7 +143,7 @@ _SSO_AuthSession_process_async_timeout (DBusGProxy *proxy,
   stuff->userdata = userdata;
   return dbus_g_proxy_begin_call_with_timeout (proxy, "process", 
           SSO_AuthSession_process_async_callback, stuff, 
-          _dbus_glib_async_data_free, timeout, 
+          auth_session_process_async_free_data, timeout,
           dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), 
           IN_sessionDataVa, G_TYPE_STRING, IN_mechanism, G_TYPE_INVALID);
 }
@@ -166,8 +175,6 @@ signon_auth_session_init (SignonAuthSession *self)
 {
     self->priv = SIGNON_AUTH_SESSION_GET_PRIV (self);
     self->priv->signon_proxy = signon_proxy_new ();
-    self->priv->cb_data_in_processing = g_hash_table_new (g_direct_hash,
-                                                          g_direct_equal);
 }
 
 static void
@@ -211,13 +218,6 @@ signon_auth_session_dispose (GObject *object)
     priv->dispose_has_run = TRUE;
 }
 
-static gboolean
-auth_session_delete_cb_data (gpointer key, gpointer value, gpointer user_data) {
-
-    g_slice_free1(GPOINTER_TO_INT(value), key);
-    return TRUE;
-}
-
 static void
 signon_auth_session_finalize (GObject *object)
 {
@@ -228,15 +228,6 @@ signon_auth_session_finalize (GObject *object)
     g_return_if_fail (priv != NULL);
 
     g_free (priv->method_name);
-
-    if (priv->cb_data_in_processing)
-    {
-        g_hash_table_foreach_remove (priv->cb_data_in_processing,
-                                     auth_session_delete_cb_data,
-                                     NULL);
-        g_hash_table_destroy (priv->cb_data_in_processing);
-        priv->cb_data_in_processing = NULL;
-    }
 
     G_OBJECT_CLASS (signon_auth_session_parent_class)->finalize (object);
 }
@@ -577,13 +568,6 @@ auth_session_query_mechanisms_reply (DBusGProxy *proxy, char **object_path,
 
     if (new_error)
         g_error_free (new_error);
-
-    if (cb_data->self->priv) {
-        GHashTable *cb_data_in_processing = cb_data->self->priv->cb_data_in_processing;
-        g_hash_table_remove(cb_data_in_processing ,cb_data);
-    }
-
-    g_slice_free (AuthSessionQueryAvailableMechanismsCbData, cb_data);
 }
 
 static void
@@ -596,12 +580,8 @@ auth_session_process_reply (DBusGProxy *proxy, GHashTable *session_data,
 
     g_return_if_fail (cb_data != NULL);
 
-    if (!cb_data->self || !cb_data->self->priv) {
-        GHashTable *cb_data_in_processing = cb_data->self->priv->cb_data_in_processing;
-        g_hash_table_remove (cb_data_in_processing, cb_data);
-        g_slice_free (AuthSessionProcessCbData, cb_data);
+    if (!cb_data->self || !cb_data->self->priv)
         return;
-    }
 
     if (G_UNLIKELY (error))
         new_error = _signon_errors_get_error_from_dbus (error);
@@ -615,23 +595,16 @@ auth_session_process_reply (DBusGProxy *proxy, GHashTable *session_data,
         }
     }
 
+    cb_data->self->priv->busy = FALSE;
+
     (cb_data->cb)
         (cb_data->self, decrypted_data, new_error, cb_data->user_data);
 
     if (decrypted_data != NULL)
         g_hash_table_unref (session_data);
 
-    cb_data->self->priv->busy = FALSE;
-
     if (new_error)
         g_error_free (new_error);
-
-    if (cb_data->self->priv) {
-        GHashTable *cb_data_in_processing = cb_data->self->priv->cb_data_in_processing;
-        g_hash_table_remove(cb_data_in_processing ,cb_data);
-    }
-
-    g_slice_free (AuthSessionProcessCbData, cb_data);
 }
 
 static void
@@ -659,9 +632,6 @@ auth_session_query_available_mechanisms_ready_cb (gpointer object, const GError 
     else
     {
         g_return_if_fail (priv->proxy != NULL);
-        g_hash_table_insert (priv->cb_data_in_processing,
-                             (gpointer)cb_data,
-                             GINT_TO_POINTER(sizeof(AuthSessionQueryAvailableMechanismsCbData)));
 
         SSO_AuthSession_query_available_mechanisms_async (
             priv->proxy,
@@ -717,11 +687,6 @@ auth_session_process_ready_cb (gpointer object, const GError *error, gpointer us
     else
     {
         g_return_if_fail (priv->proxy != NULL);
-
-        g_hash_table_insert (priv->cb_data_in_processing,
-                             (gpointer)cb_data,
-                             GINT_TO_POINTER(sizeof(AuthSessionProcessCbData)));
-
         _SSO_AuthSession_process_async_timeout (priv->proxy,
                                        operation_data->session_data,
                                        operation_data->mechanism,
